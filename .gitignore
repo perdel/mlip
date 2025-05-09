@@ -4,3 +4,6 @@ data
 __pycache__
 *.png
 *.pdf
+log.lammps
+*.dump
+*.lammps-data
