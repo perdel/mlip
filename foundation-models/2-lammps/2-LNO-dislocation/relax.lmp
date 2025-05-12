@@ -1,0 +1,42 @@
+units       metal
+boundary    p p p
+atom_style  atomic
+variable    HOME_FOLDER getenv HOME
+
+#[ read in data
+read_data  ./dislocation.lammps-data
+
+
+#[ Masses
+mass 1  6.94
+mass 2  58.6934
+mass 3  15.9994
+
+
+### Load potential with extrapolation and asi
+pair_style  grace pad_verbose
+pair_coeff * * ${HOME_FOLDER}/.cache/grace/GRACE-1L-MP-r6 Li Ni O
+
+
+#[ Parameters
+variable    Sim_thermotime    equal         10    # How often thermodynamic data is computed
+variable    Sim_dumptime      equal         50    # How often structures are dumped
+variable    Optimizer         string   cg    # cg=ConGrad, sd=SteepDescent, hftn=Newton
+
+### specify which structures should be dumped
+dump        1 all custom ${Sim_dumptime} relax.dump id type mass xsu ysu zsu fx fy fz vx vy vz
+dump_modify 1 sort id format line "%d %d %20.15g %20.15g %20.15g %20.15g %20.15g %20.15g %20.15g %20.15g %20.15g %20.15g"
+
+
+### specify which data should be logged
+thermo_style  custom step temp pe etotal pxx pxy pxz pyy pyz pzz vol fmax fnorm
+thermo_modify format float %20.15g
+thermo ${Sim_thermotime}
+
+### overwrite all velocities with zero
+velocity all set 0 0 0
+
+### 50000 steps constant box
+min_style ${Optimizer}
+min_modify dmax 0.15
+minimize 0.0 1e-6 50000 10000000
